@@ -6,11 +6,23 @@
 #include <uuid/uuid.h>
 #include "hashtable.h"
 
+#include <time.h>
+
 int main() {
+
     HashTable name_ht = {0};
     HashTable uuid_ht = {0};
 
+    struct timespec start, end;
+    
+    clock_gettime(CLOCK_MONOTONIC, &start);
     read_csv("data.csv", &name_ht, &uuid_ht);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    double time_taken = (end.tv_sec - start.tv_sec) * 1e9;
+    time_taken = (time_taken + (end.tv_nsec - start.tv_nsec)) * 1e-9;
+
+    printf("\nReading csv took %f seconds\n", time_taken);
 
     int choice;
 
@@ -37,6 +49,8 @@ int main() {
             input[strcspn(input, "\r\n")] = 0;
 
             Node* result = NULL;
+
+            clock_gettime(CLOCK_MONOTONIC, &start);
 
             // ---- UUID SEARCH ----
             if (strchr(input, '-')) {
@@ -82,6 +96,11 @@ int main() {
                 result = results[select - 1];
             }
 
+            clock_gettime(CLOCK_MONOTONIC, &end);
+
+            double time_taken = (end.tv_sec - start.tv_sec) * 1e9;
+            time_taken = (time_taken + (end.tv_nsec - start.tv_nsec)) * 1e-9;
+
             // ---- DISPLAY RESULT ----
             printf("\nSelected Customer:\n");
             printf("Name: %s\n", result->name);
@@ -89,11 +108,15 @@ int main() {
             printf("Orders: %d\n", result->total_orders);
             printf("Purchase: %.2f\n", result->total_purchase);
             printf("Score: %.2f\n", result->score);
+
+            printf("\nSearching took %f seconds\n", time_taken);
         }
 
         // ================= RANKING =================
         else if (choice == 2) {
+
             print_ranking(&name_ht);
+            
         }
 
         // ================= ADD =================
@@ -121,7 +144,16 @@ int main() {
             insert(&name_ht, name, name, uuid_str, orders, purchase);
             insert(&uuid_ht, uuid_str, name, uuid_str, orders, purchase);
 
+            clock_gettime(CLOCK_MONOTONIC, &start);
+
             save_to_csv("data.csv", &name_ht);
+
+            clock_gettime(CLOCK_MONOTONIC, &end);
+
+            double time_taken = (end.tv_sec - start.tv_sec) * 1e9;
+            time_taken = (time_taken + (end.tv_nsec - start.tv_nsec)) * 1e-9;
+
+            printf("\nSaving took %f seconds\n", time_taken);
 
             printf("Added successfully!\n");
         }
@@ -179,11 +211,20 @@ int main() {
                 target = results[select - 1];
             }
 
+            clock_gettime(CLOCK_MONOTONIC, &start);
+
             // ---- DELETE FROM BOTH TABLES ----
             delete_by_name(&name_ht, target->name);
             delete_by_uuid(&uuid_ht, target->uuid_str);
 
             save_to_csv("data.csv", &name_ht);
+
+            clock_gettime(CLOCK_MONOTONIC, &end);
+
+            double time_taken = (end.tv_sec - start.tv_sec) * 1e9;
+            time_taken = (time_taken + (end.tv_nsec - start.tv_nsec)) * 1e-9;
+
+            printf("\nDeleting took %f seconds\n", time_taken);
 
             printf("Deleted successfully\n");
         }
@@ -200,6 +241,7 @@ int main() {
 
             // ---- UUID ----
             if (strchr(input, '-')) {
+
                 target = search_by_uuid(&uuid_ht, input);
 
                 if (!target) {
@@ -241,6 +283,8 @@ int main() {
                 target = results[select - 1];
             }
 
+            
+
             // ---- UPDATE VALUES ----
             int new_orders;
             float new_purchase;
@@ -251,6 +295,8 @@ int main() {
             printf("New purchase: ");
             scanf("%f", &new_purchase);
 
+            clock_gettime(CLOCK_MONOTONIC, &start);
+
             update_customer(&name_ht, &uuid_ht,
                             target->name,
                             target->uuid_str,
@@ -258,6 +304,13 @@ int main() {
                             new_purchase);
 
             save_to_csv("data.csv", &name_ht);
+
+            clock_gettime(CLOCK_MONOTONIC, &end);
+
+            double time_taken = (end.tv_sec - start.tv_sec) * 1e9;
+            time_taken = (time_taken + (end.tv_nsec - start.tv_nsec)) * 1e-9;
+
+            printf("\nUpdating took %f seconds\n", time_taken);
 
             printf("Updated successfully\n");
         }

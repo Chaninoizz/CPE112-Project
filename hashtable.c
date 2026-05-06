@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <time.h>
+
 // ================= HASH =================
 unsigned int hash(const char* str) {
     unsigned int hash = 5381;
@@ -194,7 +196,18 @@ Node* collect(HashTable* ht) {
 // ================= PRINT =================
 void print_ranking(HashTable* ht) {
     Node* list = collect(ht);
+    
+    struct timespec start, end;
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     list = merge_sort(list);
+
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    double time_taken = (end.tv_sec - start.tv_sec) * 1e9;
+
+    time_taken = (time_taken + (end.tv_nsec - start.tv_nsec)) * 1e-9;
 
     int rank = 1;
     while (list && rank <= 100) {
@@ -210,6 +223,8 @@ void print_ranking(HashTable* ht) {
         list = list->next;
         free(temp);
     }
+
+    printf("\nMerge Sort took %f seconds\n\n", time_taken);
 }
 
 // ================= FREE =================
