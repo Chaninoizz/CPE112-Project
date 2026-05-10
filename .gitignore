@@ -1,0 +1,8 @@
+# Windows executables
+*.exe
+
+# macOS/Linux binary extensions
+*.bin
+*.out
+*.app
+
