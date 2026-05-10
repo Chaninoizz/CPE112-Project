@@ -98,11 +98,11 @@ Windows (MinGW)
 macOS / Linux
 
 ```bash
-  gcc main.c hashtable.c -o main
+  gcc main.c hashtable.c bst.c -o main
 ```
 
 Windows (MinGW)
 
 ```bash
-  gcc main.c hashtable.c -o main.exe
+  gcc main.c hashtable.c bst.c -o main.exe
 ```
