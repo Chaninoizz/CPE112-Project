@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define NUM_RECORDS 100000
+#define DEFAULT_RECORDS 100000
 #define UUID_STR_LEN 50
 
 const char* first_names[] = {
@@ -36,23 +36,21 @@ void generate_uuid(char* uuid_str) {
             rand() % 65536);
 }
 
-int main() {
+void generate_dataset(int num_records) {
 
     FILE* file = fopen("data.csv", "w");
 
     if (!file) {
         perror("Error creating file");
-        return 1;
+        return;
     }
-
-    srand(time(NULL));
 
     fprintf(file, "name,uuid,orders,purchase\n");
 
     int first_count = sizeof(first_names) / sizeof(first_names[0]);
     int last_count  = sizeof(last_names) / sizeof(last_names[0]);
 
-    for (int i = 0; i < NUM_RECORDS; i++) {
+    for (int i = 0; i < num_records; i++) {
 
         const char* fname = first_names[rand() % first_count];
         const char* lname = last_names[rand() % last_count];
@@ -83,7 +81,15 @@ int main() {
 
     fclose(file);
 
-    printf("Generated %d records successfully!\n", NUM_RECORDS);
+    printf("Generated %d records successfully!\n", num_records);
+
+}
+
+#ifdef GENERATOR_MAIN
+int main() {
+
+    generate_dataset(DEFAULT_RECORDS);
 
     return 0;
 }
+#endif

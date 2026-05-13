@@ -8,8 +8,11 @@
 
 #define HASH_MODE 1
 #define BST_MODE 2
+#define DYNAMIC_MODE 3
 
-void generate_uuid(char* uuid_str) {
+void generate_dataset(int num_records);
+
+void generate_uuid2(char* uuid_str) {
     sprintf(uuid_str,
             "%08x-%04x-%04x-%04x-%04x%04x%04x",
             rand(),
@@ -33,6 +36,7 @@ int main() {
 
     printf("1. Hash Table\n");
     printf("2. AVL Tree\n");
+    printf("3. Dynamic\n");
     printf("Select mode: ");
     scanf("%d", &mode);
 
@@ -42,6 +46,10 @@ int main() {
         read_csv("data.csv", &name_ht, &uuid_ht);
     }
     else if (mode == BST_MODE) {
+        bst_root = bst_read_csv("data.csv", bst_root);
+    }
+    else if (mode == DYNAMIC_MODE){
+        read_csv("data.csv", &name_ht, &uuid_ht);
         bst_root = bst_read_csv("data.csv", bst_root);
     }
     else {
@@ -67,6 +75,7 @@ int main() {
         printf("3. Add\n");
         printf("4. Delete\n");
         printf("5. Edit\n");
+        printf("6. Generate Dataset\n");
         printf("0. Exit\n");
         printf("Choose: ");
         scanf("%d", &choice);
@@ -245,7 +254,7 @@ int main() {
 
             // generate UUID
             char uuid_str[50];
-            generate_uuid(uuid_str);
+            generate_uuid2(uuid_str);
 
             if (mode == HASH_MODE) {
                 insert(&name_ht, name, name, uuid_str, orders, purchase);
@@ -576,10 +585,25 @@ int main() {
             printf("Updated successfully\n");
         }
 
+        else if (choice == 6)
+        {
+            int dataset_size;
+
+            printf("Dataset size: ");
+            scanf("%d", &dataset_size);
+
+            srand(time(NULL));
+
+            generate_dataset(dataset_size);
+        }
+        
+
 
         else {
             printf("Invalid choice\n");
         }
+
+
     }
 
     if (mode == HASH_MODE) {
