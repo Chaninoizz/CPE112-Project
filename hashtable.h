@@ -44,4 +44,10 @@ void update_customer(HashTable* name_ht, HashTable* uuid_ht,
 
 int search_all_by_name(HashTable* ht, const char* name, Node* results[], int max_results);
 
+void delete_by_name_and_uuid(
+    HashTable* ht,
+    const char* name,
+    const char* uuid
+);
+
 #endif

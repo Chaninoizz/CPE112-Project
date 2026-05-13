@@ -1,4 +1,5 @@
 #include "hashtable.h"
+#include "ranking.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -81,7 +82,7 @@ void delete_by_name(HashTable* ht, const char* name) {
         prev = current;
         current = current->next;
     }
-    printf("Not found\n");
+
 }
 
 void delete_by_uuid(HashTable* ht, const char* uuid) {
@@ -101,7 +102,7 @@ void delete_by_uuid(HashTable* ht, const char* uuid) {
         prev = current;
         current = current->next;
     }
-    printf("Not found\n");
+
 }
 
 // ================= CSV =================
@@ -136,42 +137,6 @@ void read_csv(const char* filename, HashTable* name_ht, HashTable* uuid_ht) {
 }
 
 // ================= SORT =================
-Node* merge(Node* a, Node* b) {
-    if (!a) return b;
-    if (!b) return a;
-
-    if (a->score >= b->score) {
-        a->next = merge(a->next, b);
-        return a;
-    } else {
-        b->next = merge(a, b->next);
-        return b;
-    }
-}
-
-Node* split(Node* head) {
-    Node* fast = head->next;
-    Node* slow = head;
-
-    while (fast && fast->next) {
-        slow = slow->next;
-        fast = fast->next->next;
-    }
-
-    Node* mid = slow->next;
-    slow->next = NULL;
-    return mid;
-}
-
-Node* merge_sort(Node* head) {
-    if (!head || !head->next) return head;
-
-    Node* mid = split(head);
-    head = merge_sort(head);
-    mid = merge_sort(mid);
-
-    return merge(head, mid);
-}
 
 Node* collect(HashTable* ht) {
     Node* head = NULL;
@@ -196,12 +161,12 @@ Node* collect(HashTable* ht) {
 // ================= PRINT =================
 void print_ranking(HashTable* ht) {
     Node* list = collect(ht);
-    
+
     struct timespec start, end;
 
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    list = merge_sort(list);
+    list = iterative_merge_sort(list);
 
     clock_gettime(CLOCK_MONOTONIC, &end);
 
@@ -209,22 +174,11 @@ void print_ranking(HashTable* ht) {
 
     time_taken = (time_taken + (end.tv_nsec - start.tv_nsec)) * 1e-9;
 
-    int rank = 1;
-    while (list && rank <= 100) {
-        printf("%-3d %-20s %-36s Orders:%-3d Purchase:%-10.2f Score:%.2f\n",
-        rank++,
-        list->name,
-        list->uuid_str,
-        list->total_orders,
-        list->total_purchase,
-        list->score);
-
-        Node* temp = list;
-        list = list->next;
-        free(temp);
-    }
+    print_top_100(list);
 
     printf("\nMerge Sort took %f seconds\n\n", time_taken);
+
+
 }
 
 // ================= FREE =================
@@ -299,4 +253,33 @@ int search_all_by_name(HashTable* ht, const char* name, Node* results[], int max
     }
 
     return count;
+}
+// ================= DELETE BY NAME + UUID =================
+void delete_by_name_and_uuid(HashTable* ht, const char* name, const char* uuid) {
+
+    unsigned int index = hash(name);
+
+    Node* current = ht->buckets[index];
+    Node* prev = NULL;
+
+    while (current) {
+
+        if (
+            strcmp(current->name, name) == 0 &&
+            strcmp(current->uuid_str, uuid) == 0
+        ) {
+
+            if (prev)
+                prev->next = current->next;
+            else
+                ht->buckets[index] = current->next;
+
+            free(current);
+
+            return;
+        }
+
+        prev = current;
+        current = current->next;
+    }
 }

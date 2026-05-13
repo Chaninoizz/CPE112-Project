@@ -13,18 +13,20 @@
 void generate_dataset(int num_records);
 
 void generate_uuid2(char* uuid_str) {
+
     sprintf(uuid_str,
-            "%08x-%04x-%04x-%04x-%04x%04x%04x",
-            rand(),
-            rand() % 65536,
-            rand() % 65536,
-            rand() % 65536,
-            rand() % 65536,
-            rand() % 65536,
-            rand() % 65536);
+        "%08x-%04x-%04x-%04x-%08x",
+        rand(),
+        rand() & 0xffff,
+        rand() & 0xffff,
+        rand() & 0xffff,
+        (unsigned int)time(NULL) ^ rand()
+    );
 }
 
 int main() {
+
+    srand(time(NULL));
 
     int mode;
     BSTNode* bst_root = NULL;
@@ -67,7 +69,13 @@ int main() {
     int choice;
 
     while (1) {
-        const char* currentmode = (mode == HASH_MODE) ? "Hashtable" : "AVL";
+        const char* currentmode;
+        if (mode == HASH_MODE)
+            currentmode = "Hashtable";
+        else if (mode == BST_MODE)
+            currentmode = "AVL";
+        else
+            currentmode = "Dynamic";
         
         printf("\n=== MENU (%s) ===\n",currentmode);
         printf("1. Search (name or UUID)\n");
@@ -95,7 +103,7 @@ int main() {
             BSTNode* bst_result = NULL;
             clock_gettime(CLOCK_MONOTONIC, &start);
 
-            if (mode == HASH_MODE) {
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
 
                 // ---- UUID SEARCH ----
                 if (strchr(input, '-')) {
@@ -144,7 +152,7 @@ int main() {
                     result = results[select - 1];
                 }
             }
-            else if (mode == BST_MODE) {
+            if (mode == BST_MODE) {
 
                 // ---- UUID SEARCH ----
                 if (strchr(input, '-')) {
@@ -203,20 +211,29 @@ int main() {
                 }
             }
 
+            // sync AVL result automatically in dynamic mode
+            if (mode == DYNAMIC_MODE && result) {
+                bst_result = bst_search_uuid(bst_root, result->uuid_str);
+
+                if (!bst_result) {
+                    printf("Customer not found in AVL\n");
+                    continue;
+                }
+            }
             double time_taken = (end.tv_sec - start.tv_sec) * 1e9;
             time_taken = (time_taken + (end.tv_nsec - start.tv_nsec)) * 1e-9;
 
             // ---- DISPLAY RESULT ----
             printf("\nSelected Customer:\n");
 
-            if (mode == HASH_MODE) {
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
                 printf("Name: %s\n", result->name);
                 printf("UUID: %s\n", result->uuid_str);
                 printf("Orders: %d\n", result->total_orders);
                 printf("Purchase: %.2f\n", result->total_purchase);
                 printf("Score: %.2f\n", result->score);
             }
-            else if (mode == BST_MODE) {
+            if (mode == BST_MODE) {
                 printf("Name: %s\n", bst_result->name);
                 printf("UUID: %s\n", bst_result->uuid_str);
                 printf("Orders: %d\n", bst_result->total_orders);
@@ -229,7 +246,8 @@ int main() {
 
         // ================= RANKING =================
         else if (choice == 2) {
-            if (mode == HASH_MODE) {
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
+
                 print_ranking(&name_ht);
             }
             else if (mode == BST_MODE) {
@@ -256,11 +274,12 @@ int main() {
             char uuid_str[50];
             generate_uuid2(uuid_str);
 
-            if (mode == HASH_MODE) {
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
                 insert(&name_ht, name, name, uuid_str, orders, purchase);
                 insert(&uuid_ht, uuid_str, name, uuid_str, orders, purchase);
             }
-            else if (mode == BST_MODE) {
+
+            if (mode == BST_MODE || mode == DYNAMIC_MODE) {
                 bst_root = bst_insert(bst_root,
                                       name,
                                       uuid_str,
@@ -268,9 +287,10 @@ int main() {
                                       purchase);
             }
 
+
             clock_gettime(CLOCK_MONOTONIC, &start);
 
-            if (mode == HASH_MODE) {
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
                 save_to_csv("data.csv", &name_ht);
             }
             else if (mode == BST_MODE) {
@@ -298,7 +318,7 @@ int main() {
             Node* target = NULL;
             BSTNode* bst_target = NULL;
 
-            if (mode == HASH_MODE) {
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
 
                 // ---- UUID ----
                 if (strchr(input, '-')) {
@@ -344,7 +364,7 @@ int main() {
                 }
             }
 
-            else if (mode == BST_MODE) {
+            if (mode == BST_MODE) {
 
                 // ---- UUID ----
                 if (strchr(input, '-')) {
@@ -398,20 +418,51 @@ int main() {
                 }
             }
 
-            clock_gettime(CLOCK_MONOTONIC, &start);
+            if (mode == DYNAMIC_MODE && target) {
 
-            if (mode == HASH_MODE) {
+                bst_target = bst_search_uuid(
 
-                delete_by_name(&name_ht, target->name);
-                delete_by_uuid(&uuid_ht, target->uuid_str);
+                    bst_root,
 
-                save_to_csv("data.csv", &name_ht);
+                    target->uuid_str
+
+                );
+
+                if (!bst_target) {
+
+                    printf("Customer not found in AVL\n");
+
+                    continue;
+
+                }
+
             }
 
+            clock_gettime(CLOCK_MONOTONIC, &start);
+
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
+
+                delete_by_name_and_uuid(
+                    &name_ht,
+                    target->name,
+                    target->uuid_str
+                );
+
+                delete_by_uuid(
+                    &uuid_ht,
+                    target->uuid_str
+                );
+            }
+
+            if ((mode == BST_MODE || mode == DYNAMIC_MODE) && bst_target) {
+
+                bst_root = bst_delete(bst_root,bst_target->uuid_str);
+            }
+
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
+                save_to_csv("data.csv", &name_ht);
+            }
             else if (mode == BST_MODE) {
-
-                bst_root = bst_delete(bst_root, bst_target->uuid_str);
-
                 bst_save_to_csv("data.csv", bst_root);
             }
 
@@ -436,7 +487,7 @@ int main() {
             Node* target = NULL;
             BSTNode* bst_target = NULL;
 
-            if (mode == HASH_MODE) {
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
 
                 // ---- UUID ----
                 if (strchr(input, '-')) {
@@ -483,7 +534,7 @@ int main() {
                 }
             }
 
-            else if (mode == BST_MODE) {
+            if (mode == BST_MODE) {
 
                 // ---- UUID ----
                 if (strchr(input, '-')) {
@@ -538,7 +589,15 @@ int main() {
                 }
             }
 
-            
+           
+            if (mode == DYNAMIC_MODE && target) {
+                bst_target = bst_search_uuid(bst_root, target->uuid_str);
+
+                if (!bst_target) {
+                    printf("Customer not found in AVL\n");
+                    continue;
+                }
+            }
 
             // ---- UPDATE VALUES ----
             int new_orders;
@@ -552,18 +611,16 @@ int main() {
 
             clock_gettime(CLOCK_MONOTONIC, &start);
 
-            if (mode == HASH_MODE) {
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
 
                 update_customer(&name_ht, &uuid_ht,
                                 target->name,
                                 target->uuid_str,
                                 new_orders,
                                 new_purchase);
-
-                save_to_csv("data.csv", &name_ht);
             }
 
-            else if (mode == BST_MODE) {
+            if (mode == BST_MODE || mode == DYNAMIC_MODE) {
 
                 bst_update_customer(
                     bst_root,
@@ -571,7 +628,12 @@ int main() {
                     new_orders,
                     new_purchase
                 );
+            }
 
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
+                save_to_csv("data.csv", &name_ht);
+            }
+            else if (mode == BST_MODE) {
                 bst_save_to_csv("data.csv", bst_root);
             }
 
@@ -592,11 +654,55 @@ int main() {
             printf("Dataset size: ");
             scanf("%d", &dataset_size);
 
-            srand(time(NULL));
+            if (dataset_size <= 0)
+            {
+                return printf("Invalid dataset size\n");
+            }
+            else if (dataset_size >1000000)
+            {
+                printf("Experimental dataset size may cause performance\n");
+            }
+            
 
             generate_dataset(dataset_size);
+
+            if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
+                free_hashtable(&name_ht);
+                free_hashtable(&uuid_ht);
+
+                memset(&name_ht, 0, sizeof(HashTable));
+                memset(&uuid_ht, 0, sizeof(HashTable));
+            }
+
+            if (mode == BST_MODE || mode == DYNAMIC_MODE) {
+                bst_free(bst_root);
+                bst_root = NULL;
+            }
+
+            clock_gettime(CLOCK_MONOTONIC, &start);
+
+            if (mode == HASH_MODE) {
+                read_csv("data.csv", &name_ht, &uuid_ht);
+            }
+            else if (mode == BST_MODE) {
+                bst_root = bst_read_csv("data.csv", NULL);
+            }
+            else if (mode == DYNAMIC_MODE) {
+                read_csv("data.csv", &name_ht, &uuid_ht);
+                bst_root = bst_read_csv("data.csv", NULL);
+            }
+            else {
+                printf("Invalid mode\n");
+                return 1;
+            }
+
+            clock_gettime(CLOCK_MONOTONIC, &end);
+
+            double reload_time = (end.tv_sec - start.tv_sec) * 1e9;
+            reload_time = (reload_time + (end.tv_nsec - start.tv_nsec)) * 1e-9;
+
+            printf("\nReloading dataset took %f seconds\n", reload_time);
         }
-        
 
 
         else {
@@ -606,11 +712,12 @@ int main() {
 
     }
 
-    if (mode == HASH_MODE) {
+    if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
         free_hashtable(&name_ht);
         free_hashtable(&uuid_ht);
     }
-    else if (mode == BST_MODE) {
+
+    if (mode == BST_MODE || mode == DYNAMIC_MODE) {
         bst_free(bst_root);
     }
 

@@ -1,6 +1,7 @@
 
 
 #include "bst.h"
+#include "ranking.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -509,24 +510,17 @@ void bst_save_to_csv(
 }
 
 // ================= RANKING =================
-typedef struct RankNode {
-    char name[MAX_NAME];
-    char uuid[MAX_UUID_STR];
-    int orders;
-    float purchase;
-    float score;
-    struct RankNode* next;
-} RankNode;
 
-RankNode* create_rank_node(BSTNode* node) {
+Node* create_rank_node(BSTNode* node) {
 
-    RankNode* r = (RankNode*)malloc(sizeof(RankNode));
+    Node* r = (Node*)malloc(sizeof(Node));
 
     strcpy(r->name, node->name);
-    strcpy(r->uuid, node->uuid_str);
+    strcpy(r->uuid_str, node->uuid_str);
 
-    r->orders = node->total_orders;
-    r->purchase = node->total_purchase;
+    r->total_orders = node->total_orders;
+    r->total_purchase = node->total_purchase;
+
     r->score = node->score;
 
     r->next = NULL;
@@ -534,67 +528,24 @@ RankNode* create_rank_node(BSTNode* node) {
     return r;
 }
 
-void collect_bst_nodes(BSTNode* root, RankNode** head) {
+void collect_bst_nodes(BSTNode* root, Node** head) {
 
     if (!root)
         return;
 
     collect_bst_nodes(root->left, head);
 
-    RankNode* n = create_rank_node(root);
+    Node* n = create_rank_node(root);
     n->next = *head;
     *head = n;
 
     collect_bst_nodes(root->right, head);
 }
 
-RankNode* merge_rank(RankNode* a, RankNode* b) {
-
-    if (!a) return b;
-    if (!b) return a;
-
-    if (a->score >= b->score) {
-        a->next = merge_rank(a->next, b);
-        return a;
-    }
-    else {
-        b->next = merge_rank(a, b->next);
-        return b;
-    }
-}
-
-RankNode* split_rank(RankNode* head) {
-
-    RankNode* slow = head;
-    RankNode* fast = head->next;
-
-    while (fast && fast->next) {
-        slow = slow->next;
-        fast = fast->next->next;
-    }
-
-    RankNode* mid = slow->next;
-    slow->next = NULL;
-
-    return mid;
-}
-
-RankNode* merge_sort_rank(RankNode* head) {
-
-    if (!head || !head->next)
-        return head;
-
-    RankNode* mid = split_rank(head);
-
-    head = merge_sort_rank(head);
-    mid = merge_sort_rank(mid);
-
-    return merge_rank(head, mid);
-}
 
 void bst_print_ranking(BSTNode* root) {
 
-    RankNode* head = NULL;
+    Node* head = NULL;
 
     collect_bst_nodes(root, &head);
 
@@ -602,7 +553,7 @@ void bst_print_ranking(BSTNode* root) {
 
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    head = merge_sort_rank(head);
+    head = iterative_merge_sort(head);
 
     clock_gettime(CLOCK_MONOTONIC, &end);
 
@@ -610,24 +561,7 @@ void bst_print_ranking(BSTNode* root) {
 
     time_taken = (time_taken + (end.tv_nsec - start.tv_nsec)) * 1e-9;
 
-    int rank = 1;
-
-    while (head && rank <= 100) {
-
-        printf(
-            "%-3d %-20s %-36s Orders:%-3d Purchase:%-10.2f Score:%.2f\n",
-            rank++,
-            head->name,
-            head->uuid,
-            head->orders,
-            head->purchase,
-            head->score
-        );
-
-        RankNode* temp = head;
-        head = head->next;
-        free(temp);
-    }
+    print_top_100(head);
 
     printf("\nMerge Sort took %f seconds\n\n", time_taken);
 
