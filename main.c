@@ -101,21 +101,24 @@ int main() {
 
             Node* result = NULL;
             BSTNode* bst_result = NULL;
-            clock_gettime(CLOCK_MONOTONIC, &start);
 
             if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
 
                 // ---- UUID SEARCH ----
                 if (strchr(input, '-')) {
+                    clock_gettime(CLOCK_MONOTONIC, &start);
+
                     result = search_by_uuid(&uuid_ht, input);
+
+                    if (mode == HASH_MODE)
+                    {
+                        clock_gettime(CLOCK_MONOTONIC, &end);
+                    }
+                
 
                     if (!result) {
                         printf("Customer not found\n");
                         continue;
-                    }
-                    if (mode == HASH_MODE){
-
-                        clock_gettime(CLOCK_MONOTONIC, &end);
                     }
 
                 }
@@ -156,6 +159,8 @@ int main() {
                 }
             }
             if (mode == BST_MODE) {
+
+                clock_gettime(CLOCK_MONOTONIC, &start);
 
                 // ---- UUID SEARCH ----
                 if (strchr(input, '-')) {
@@ -701,7 +706,7 @@ int main() {
             }
 
             clock_gettime(CLOCK_MONOTONIC, &end);
-
+ 
             double reload_time = (end.tv_sec - start.tv_sec) * 1e9;
             reload_time = (reload_time + (end.tv_nsec - start.tv_nsec)) * 1e-9;
 
