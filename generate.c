@@ -11,7 +11,7 @@ const char* first_names[] = {
     "Apinya","Sirikarn","Teerapat","Pongpat","Tanawat","Sakda","Phuwanat","Kittipong",
     "Ratchanee","Busaba","Lalita","Jirawan","Pimchanok","Kamonwan","Chalerm","Niran",
     "Thanakorn","Pakorn","Natthapon","Kittisak","Arthit","Panuwat","Surasak","Aekkachai",
-    "Pimrada","Napatsorn","Chanida","Daranee","Kornkanok","Thidarat","Supansa","Panadda"
+    "Pimrada","Napatsorn","Chanida","Daranee","Kornkanok","Thidarat","Supansa","Panadda","Chadathong"
 };
 
 const char* last_names[] = {
@@ -20,7 +20,7 @@ const char* last_names[] = {
     "Kanjana","Tantipong","Suwan","Phothong","Sukhum","Siriwat","Wongchai","Pongsiri",
     "Intarakul","Chantarasak","Nimman","Sutham","Pattara","Thipwong","Lertsiri",
     "Jaroensuk","Boonprasert","Kiatkul","Rojanapong","Tirakul","Yingcharoen","Sombat",
-    "Chalermchai","Techasiri","Phupong","Ariyawong","Sirisomboon","Wisetkul"
+    "Chalermchai","Techasiri","Phupong","Ariyawong","Sirisomboon","Wisetkul","Porchaidai"
 };
 
 // Cross-platform UUID-like generator

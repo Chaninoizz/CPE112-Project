@@ -113,8 +113,11 @@ int main() {
                         printf("Customer not found\n");
                         continue;
                     }
+                    if (mode == HASH_MODE){
 
-                    clock_gettime(CLOCK_MONOTONIC, &end);
+                        clock_gettime(CLOCK_MONOTONIC, &end);
+                    }
+
                 }
 
                 // ---- NAME SEARCH ----
@@ -214,6 +217,7 @@ int main() {
             // sync AVL result automatically in dynamic mode
             if (mode == DYNAMIC_MODE && result) {
                 bst_result = bst_search_uuid(bst_root, result->uuid_str);
+                clock_gettime(CLOCK_MONOTONIC, &end);
 
                 if (!bst_result) {
                     printf("Customer not found in AVL\n");
@@ -274,6 +278,8 @@ int main() {
             char uuid_str[50];
             generate_uuid2(uuid_str);
 
+            clock_gettime(CLOCK_MONOTONIC, &start);
+
             if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
                 insert(&name_ht, name, name, uuid_str, orders, purchase);
                 insert(&uuid_ht, uuid_str, name, uuid_str, orders, purchase);
@@ -287,8 +293,6 @@ int main() {
                                       purchase);
             }
 
-
-            clock_gettime(CLOCK_MONOTONIC, &start);
 
             if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
                 save_to_csv("data.csv", &name_ht);
