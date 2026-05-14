@@ -101,20 +101,17 @@ int main() {
 
             Node* result = NULL;
             BSTNode* bst_result = NULL;
+            clock_gettime(CLOCK_MONOTONIC, &start);
 
             if (mode == HASH_MODE || mode == DYNAMIC_MODE) {
 
                 // ---- UUID SEARCH ----
                 if (strchr(input, '-')) {
-                    clock_gettime(CLOCK_MONOTONIC, &start);
 
                     result = search_by_uuid(&uuid_ht, input);
 
-                    if (mode == HASH_MODE)
-                    {
-                        clock_gettime(CLOCK_MONOTONIC, &end);
-                    }
-                
+                    clock_gettime(CLOCK_MONOTONIC, &end);
+
 
                     if (!result) {
                         printf("Customer not found\n");
@@ -159,8 +156,6 @@ int main() {
                 }
             }
             if (mode == BST_MODE) {
-
-                clock_gettime(CLOCK_MONOTONIC, &start);
 
                 // ---- UUID SEARCH ----
                 if (strchr(input, '-')) {
@@ -222,7 +217,6 @@ int main() {
             // sync AVL result automatically in dynamic mode
             if (mode == DYNAMIC_MODE && result) {
                 bst_result = bst_search_uuid(bst_root, result->uuid_str);
-                clock_gettime(CLOCK_MONOTONIC, &end);
 
                 if (!bst_result) {
                     printf("Customer not found in AVL\n");
